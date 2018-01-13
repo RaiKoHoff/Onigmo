@@ -162,7 +162,7 @@ code3_equal(const OnigCodePoint *x, const OnigCodePoint *y)
 #define I(n) OnigSpecialIndexEncode(n)
 #define L(n) SpecialsLengthEncode(n)
 
-#include "casefold.h"
+#include "unicode/casefold.h"
 
 #undef U
 #undef D
@@ -174,7 +174,7 @@ code3_equal(const OnigCodePoint *x, const OnigCodePoint *y)
 #undef I
 #undef L
 
-#include "name2ctype.h"
+#include "unicode/name2ctype.h"
 
 #define CODE_RANGES_NUM numberof(CodeRanges)
 
