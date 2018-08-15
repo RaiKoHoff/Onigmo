@@ -93,7 +93,7 @@ public:
   }
 
   virtual Sci::Position FindText(Document* doc, Sci::Position minPos, Sci::Position maxPos, const char* pattern,
-                        bool caseSensitive, bool word, bool wordStart, int flags, Sci::Position* length) override;
+                                 bool caseSensitive, bool word, bool wordStart, int flags, Sci::Position* length) override;
 
   virtual const char* SubstituteByPosition(Document* doc, const char* text, Sci::Position* length) override;
 
@@ -205,7 +205,7 @@ static void replaceAll(std::string& source, const std::string& from, const std::
  * Has not been tested with backwards DBCS searches yet.
  */
 Sci::Position OnigmoRegExEngine::FindText(Document* doc, Sci::Position minPos, Sci::Position maxPos, const char *pattern,
-                                bool caseSensitive, bool word, bool wordStart, int searchFlags, Sci::Position *length)
+                                 bool caseSensitive, bool word, bool wordStart, int searchFlags, Sci::Position *length)
 {
   if (!(pattern && (strlen(pattern) > 0))) {
     *length = 0;
@@ -225,7 +225,7 @@ Sci::Position OnigmoRegExEngine::FindText(Document* doc, Sci::Position minPos, S
   Sci::Position rangeEnd = (findForward) ? maxPos : minPos;
   Sci::Position rangeLen = (rangeEnd - rangeBeg);
 
-  
+
   // -----------------------------
   // --- Onigmo Engine Options ---
   // -----------------------------
@@ -244,7 +244,7 @@ Sci::Position OnigmoRegExEngine::FindText(Document* doc, Sci::Position minPos, S
   else {
     ONIG_OPTION_OFF(onigmoOptions, ONIG_OPTION_DOTALL);
   }
- 
+
 
   //ONIG_OPTION_ON(onigmoOptions, ONIG_OPTION_SINGLELINE);
   ONIG_OPTION_ON(onigmoOptions, ONIG_OPTION_NEGATE_SINGLELINE);
@@ -293,11 +293,10 @@ Sci::Position OnigmoRegExEngine::FindText(Document* doc, Sci::Position minPos, S
   UChar* rangeBegPtr = (UChar*)doc->RangePointer(rangeBeg, rangeLen);
   UChar* rangeEndPtr = (UChar*)doc->RangePointer(rangeEnd, 0);
 
-
   OnigPosition result = ONIG_MISMATCH;
   try {
     if (findForward)
-    result = onig_search(m_RegExpr, docBegPtr, docSEndPtr, rangeBegPtr, rangeEndPtr, &m_Region, onigmoOptions);
+      result = onig_search(m_RegExpr, docBegPtr, docSEndPtr, rangeBegPtr, rangeEndPtr, &m_Region, onigmoOptions);
     else //                                                              X                                    //
       result = onig_search(m_RegExpr, docBegPtr, docSEndPtr, rangeEndPtr, rangeBegPtr, &m_Region, onigmoOptions);
   }
