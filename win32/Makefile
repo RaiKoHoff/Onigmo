@@ -26,7 +26,7 @@ ARCH = x86
 
 
 CPPFLAGS =
-CFLAGS = -O2 -nologo -W3
+CFLAGS = -O2 -nologo -W3 -DONIG_EXTERN=extern
 LDFLAGS =
 LOADLIBES =
 ARLIB = lib
