@@ -36382,7 +36382,7 @@ uniname2ctype_hash (register const char *str, register size_t len)
 #ifndef USE_UNICODE_PROPERTIES
   return len + asso_values[(unsigned char)str[2]] + asso_values[(unsigned char)str[0]];
 #else /* USE_UNICODE_PROPERTIES */
-  register unsigned int hval = len;
+  register unsigned int hval = (unsigned int)len;
 
   switch (hval)
     {
