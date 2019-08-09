@@ -1248,6 +1248,12 @@ def main():
     x2("(.)(?<a>a)(?<a>b)\\k<a>", "xaba", 0, 4)
     x2("\\p{Print}+", "\n a", 1, 3)
     x2("\\p{Graph}+", "\n a", 2, 3)
+    x2("\\p{^Space}", "x", 0, 1)
+    x2("\\P{^Space}", " ", 0, 1)
+    n("\\px", "")   # warning: invalid Unicode Property
+    x2("[\\p{^Space}]", "x", 0, 1)
+    x2("[\\P{^Space}]", " ", 0, 1)
+    n("[\\px]", "")   # warning: invalid Unicode Property
     n("a(?!b)", "ab");
     x2("(?:(.)\\1)*", "a" * 300, 0, 300)
     x2("\\cA\\C-B\\a[\\b]\\t\\n\\v\\f\\r\\e\\c?", "\x01\x02\x07\x08\x09\x0a\x0b\x0c\x0d\x1b\x7f", 0, 11)
@@ -1263,6 +1269,7 @@ def main():
     n("[c-a]", "", err=onigmo.ONIGERR_EMPTY_RANGE_IN_CHAR_CLASS)
     x2("[[:ab:\\x{30}]]+", ":ab0x", 0, 4)
     x2("[[:x\\]:]+", "[x:]", 0, 4)
+    x2("[\n\n]", "\n", 0, 1)
     x2("[!--x]+", "!-x", 0, 3)
     x2(" ]", " ]", 0, 2)    # warning: ']' without escape
     n("\\x{FFFFFFFF}", "", err=onigmo.ONIGERR_TOO_BIG_WIDE_CHAR_VALUE);
@@ -1320,6 +1327,18 @@ def main():
     n("\\M#", "", err=onigmo.ONIGERR_META_CODE_SYNTAX)
     n("\\C", "", err=onigmo.ONIGERR_END_PATTERN_AT_CONTROL)
     n("\\C#", "", err=onigmo.ONIGERR_CONTROL_CODE_SYNTAX)
+    n("(?0d", "", syn=onigmo.ONIG_SYNTAX_PERL, err=onigmo.ONIGERR_INVALID_GROUP_NAME) # Issue #132
+    if onig_encoding == onigmo.ONIG_ENCODING_UTF8:
+        n("\\x{1000000}", "", err=onigmo.ONIGERR_TOO_BIG_WIDE_CHAR_VALUE)
+    else:
+        n("\\x{1000000}", "")   # TODO: Should be an error? (code_to_mbc())
+    if onig_encoding == onigmo.ONIG_ENCODING_SJIS or \
+            onig_encoding == onigmo.ONIG_ENCODING_CP932 or \
+            onig_encoding == onigmo.ONIG_ENCODING_EUC_JP or \
+            onig_encoding == onigmo.ONIG_ENCODING_UTF8:
+        n("[\\x{1000000}]", "", err=onigmo.ONIGERR_TOO_BIG_WIDE_CHAR_VALUE)
+    else:
+        n("[\\x{1000000}]", "") # TODO: Should be an error? (code_to_mbclen())
 
     # ONIG_OPTION_FIND_LONGEST option
     x2("foo|foobar", "foobar", 0, 3)
@@ -1431,11 +1450,25 @@ def main():
     x2("((?<v>)a|b(?1)b)", "bbabb", 0, 5, syn=onigmo.ONIG_SYNTAX_PERL)
     x2("((?<v>a|b(?&v)b))", "bbabb", 0, 5, syn=onigmo.ONIG_SYNTAX_PERL)
     n("(?<", "", err=onigmo.ONIGERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS)
+    n("(?'", "", err=onigmo.ONIGERR_EMPTY_GROUP_NAME)
     n("(?<>)", "", err=onigmo.ONIGERR_EMPTY_GROUP_NAME)
     n("(?<.>)", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
+    n("(?<1>)", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("(?<-1>)", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
     n("\\g<1->", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
+    n("\\g<", "", err=onigmo.ONIGERR_EMPTY_GROUP_NAME)
+    n("\\g<a", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("\\g<->", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("\\g<-0>", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("\\g<1a>", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("\\g<a/>", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
+    n("\\k.", "")
+    n("\\k<", "", err=onigmo.ONIGERR_EMPTY_GROUP_NAME)
+    n("\\k<>", "", err=onigmo.ONIGERR_EMPTY_GROUP_NAME)
     n("\\k<1/>", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
     n("\\k<1-1/>", "", err=onigmo.ONIGERR_INVALID_GROUP_NAME)
+    n("\\k<1+", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
+    n("\\k<.>", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
     n("\\k<a/>", "", err=onigmo.ONIGERR_INVALID_CHAR_IN_GROUP_NAME)
     n("\\k<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>", "", err=onigmo.ONIGERR_UNDEFINED_NAME_REFERENCE)
     n("\\g<1>", "", err=onigmo.ONIGERR_UNDEFINED_GROUP_REFERENCE)
@@ -1713,7 +1746,9 @@ def main():
     # These patterns need deep parse stack.
     x2("(" * 200 + "a" + ")" * 200, "a", 0, 1)
     n("(" * 2000 + "a" + ")" * 2000, "a", err=onigmo.ONIGERR_PARSE_DEPTH_LIMIT_OVER)
-    onigmo.onig_set_match_stack_limit_size(0)
+    x2("X" + "+" * 100, "X", 0, 1)
+    n("X" + "+" * 10000, "X", err=onigmo.ONIGERR_PARSE_DEPTH_LIMIT_OVER)
+    onigmo.onig_set_parse_depth_limit(0)
 
     # syntax functions
     onigmo.onig_set_syntax_op(syntax_default,
